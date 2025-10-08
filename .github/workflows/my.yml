@@ -19,38 +19,24 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Install specific CMake version 3.28.1
+    - name: Initialization environment and install CMake 3.28
       run: |
         apt-get update
-        apt-get -y install wget curl gnupg lsb-release
+        # 先安装基础工具
+        apt-get -y install wget curl gnupg software-properties-common
         
-        # 安装指定版本的 CMake 3.28.1
-        CMAKE_VERSION="3.28.1"
-        ARCH="x86_64"
+        # 添加 Kitware 官方仓库（包含特定版本的 CMake）
+        wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | apt-key add -
+        apt-add-repository "deb https://apt.kitware.com/ubuntu/ focal main"
         
-        # 下载指定版本的 CMake
-        wget https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-linux-${ARCH}.tar.gz
+        # 更新并安装指定版本的 CMake
+        apt-get update
+        apt-get -y install cmake=3.28.1-0kitware1ubuntu20.04.1
         
-        # 创建目标目录并解压
-        mkdir -p /opt/cmake
-        tar -xzf cmake-${CMAKE_VERSION}-linux-${ARCH}.tar.gz -C /opt/cmake
-        
-        # 创建符号链接到系统路径
-        ln -sf /opt/cmake/cmake-${CMAKE_VERSION}-linux-${ARCH}/bin/cmake /usr/local/bin/cmake
-        ln -sf /opt/cmake/cmake-${CMAKE_VERSION}-linux-${ARCH}/bin/ctest /usr/local/bin/ctest
-        ln -sf /opt/cmake/cmake-${CMAKE_VERSION}-linux-${ARCH}/bin/cpack /usr/local/bin/cpack
-        
-        # 设置环境变量确保 CMake 能找到自己的资源文件
-        echo "export CMAKE_ROOT=/opt/cmake/cmake-${CMAKE_VERSION}-linux-${ARCH}/share/cmake-${CMAKE_VERSION%.*}" >> ~/.bashrc
-        source ~/.bashrc
-        
-        # 验证安装和版本
+        # 验证版本
         cmake --version
-        echo "CMAKE_ROOT is set to: $CMAKE_ROOT"
         
-    - name: Install build dependencies
-      run: |
-        apt-get update
+        # 安装其他构建依赖
         apt-get -y install unzip libtool-bin curl gperf gawk flex bison nano xxd fakeroot \
         cpio git python-docutils gettext automake autopoint texinfo build-essential help2man \
         pkg-config zlib1g-dev libgmp3-dev libmpc-dev libmpfr-dev libncurses5-dev libltdl-dev wget \
@@ -70,8 +56,6 @@ jobs:
         TNAME: K2P-32-512-usb
         KERNEL: 3.4
       run: |
-        # 确保 CMake 环境变量在后续步骤中生效
-        export CMAKE_ROOT=/opt/cmake/cmake-3.28.1-linux-x86_64/share/cmake-3.28
         cd /opt/rt-n56u/trunk
         if [ ! -f configs/templates/$TNAME.config ] ; then
         echo "configs/templates/$TNAME.config not found "
