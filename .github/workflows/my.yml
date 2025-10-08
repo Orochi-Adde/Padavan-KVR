@@ -19,28 +19,31 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Initialization environment and install CMake 3.28
+    - name: Install original dependencies (with old CMake 3.16)
       run: |
         apt-get update
-        # 先安装基础工具
-        apt-get -y install wget curl gnupg software-properties-common
-        
-        # 添加 Kitware 官方仓库（包含特定版本的 CMake）
-        wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | apt-key add -
-        apt-add-repository "deb https://apt.kitware.com/ubuntu/ focal main"
-        
-        # 更新并安装指定版本的 CMake
-        apt-get update
-        apt-get -y install cmake=3.28.1-0kitware1ubuntu20.04.1
-        
-        # 验证版本
-        cmake --version
-        
-        # 安装其他构建依赖
-        apt-get -y install unzip libtool-bin curl gperf gawk flex bison nano xxd fakeroot \
+        apt-get -y install unzip libtool-bin curl cmake gperf gawk flex bison nano xxd fakeroot \
         cpio git python-docutils gettext automake autopoint texinfo build-essential help2man \
         pkg-config zlib1g-dev libgmp3-dev libmpc-dev libmpfr-dev libncurses5-dev libltdl-dev wget \
         libssl-dev
+        
+        # 验证当前 CMake 版本（应该是 3.16）
+        echo "Current CMake version:"
+        cmake --version
+        
+    - name: Upgrade CMake to 3.28.1 using Snap
+      run: |
+        # 使用 snap 安装指定版本的 CMake，不影响其他依赖
+        apt-get update
+        apt-get -y install snapd
+        snap install cmake --classic --channel=3.28/stable
+        
+        # 创建符号链接，确保系统使用新版本的 CMake
+        ln -sf /snap/bin/cmake /usr/local/bin/cmake
+        
+        # 验证新版本
+        echo "New CMake version:"
+        cmake --version
         
     - name: Clone source code
       env:
