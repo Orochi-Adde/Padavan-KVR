@@ -13,6 +13,7 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
+      
     - name: Initialization environment
       env:
         DEBIAN_FRONTEND: noninteractive
@@ -21,7 +22,26 @@ jobs:
         sudo apt-get -y install unzip libtool curl cmake gperf gawk flex bison nano xxd fakeroot \
         cpio git python3-docutils gettext automake autopoint texinfo build-essential help2man \
         pkg-config zlib1g-dev libgmp-dev libmpc-dev libmpfr-dev libncurses5-dev libltdl-dev wget \
-        libssl-dev libelf-dev libjson-c-dev meson ninja-build python3-pip rsync
+        libssl-dev libelf-dev libjson-c-dev meson ninja-build python3-pip rsync \
+        patch
+        
+    - name: Apply Ubuntu 22.04 compatibility fixes
+      run: |
+        # 修复 pidfd_open 问题
+        find . -path "*/threadpool.c" -type f -exec grep -l "SYS_pidfd_open" {} \; | while read file; do
+          echo "Fixing SYS_pidfd_open in $file"
+          sed -i 's/SYS_pidfd_open/__NR_pidfd_open/g' "$file"
+          # 如果 __NR_pidfd_open 也不存在，使用回退方案
+          if ! grep -q "__NR_pidfd_open" "$file"; then
+            sed -i 's/return syscall(SYS_pidfd_open, pid, flags);/return syscall(434, pid, flags); \/\/ SYS_pidfd_open on newer kernels/g' "$file"
+          fi
+        done || true
+        
+        # 移除不支持的编译器标志
+        find . -name "*.mk" -o -name "Makefile" -o -name "CMakeLists.txt" -type f | while read file; do
+          sed -i 's/-Wno-unsafe-buffer-usage//g' "$file"
+        done || true
+        
     - name: Clone source code
       env:
         KERNEL: 3.4
