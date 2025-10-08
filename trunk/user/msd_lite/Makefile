@@ -8,11 +8,13 @@ all: download_test config_test
 
 download_test:
 	( if [ ! -d $(THISDIR)/$(SRC_NAME) ]; then \
-		git clone https://github.com/rozhuk-im/msd_lite.git ; \
+		git clone https://github.com/Orochi-Adde/msd_lite.git ; \
 		cd $(SRC_NAME) ; \
-		git checkout db583386ca47d803e44d9adc98b1ec6a4abb5d9a ; \
 		git submodule update --init --recursive ; \
 		patch -p1 -i ../msd_lite.diff ; \
+		cd src/liblcb ; \
+		patch -p1 -i ../../../liblcb_msd_lite.diff ; \
+		cd ../../; \
 	fi )
 
 config_test:
@@ -30,20 +32,6 @@ configure:
 clean:
 	rm -rf $(SRC_NAME)/build
 	rm -f config_done
-
-# 新增一个强制回退到指定提交的目标
-reset_source:
-	( if [ -d $(THISDIR)/$(SRC_NAME) ]; then \
-		cd $(SRC_NAME) ; \
-		git fetch origin ; \
-		git reset --hard db583386ca47d803e44d9adc98b1ec6a4abb5d9a ; \
-		git submodule update --init --recursive ; \
-		patch -p1 -i ../msd_lite.diff ; \
-	fi )
-
-# 清理并完全重新下载源码
-distclean: clean
-	rm -rf $(SRC_NAME)
 
 romfs:
 	$(ROMFSINST) $(THISDIR)/$(SRC_NAME)/build/src/msd_lite /usr/bin/msd_lite
