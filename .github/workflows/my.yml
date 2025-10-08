@@ -22,18 +22,20 @@ jobs:
     - name: Initialization environment
       run: |
         apt-get update
-        apt-get -y install wget gnupg software-properties-common
-        # 添加 Kitware 的 APT 仓库来获取更新的 CMake
-        wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | tee /etc/apt/trusted.gpg.d/kitware.gpg >/dev/null
-        apt-add-repository 'deb https://apt.kitware.com/ubuntu/ focal main'
-        apt-get update
-        
-        apt-get -y install unzip libtool-bin curl cmake gperf gawk flex bison nano xxd fakeroot \
-        cpio git python-docutils gettext automake autopoint texinfo build-essential help2man \
-        pkg-config zlib1g-dev libgmp3-dev libmpc-dev libmpfr-dev libncurses5-dev libltdl-dev wget sudo
+        # 安装最新版 CMake
+        wget https://github.com/Kitware/CMake/releases/download/v3.28.1/cmake-3.28.1-linux-x86_64.sh
+        chmod +x cmake-3.28.1-linux-x86_64.sh
+        ./cmake-3.28.1-linux-x86_64.sh --skip-license --prefix=/usr/local
+        rm cmake-3.28.1-linux-x86_64.sh
         
         # 验证 CMake 版本
         cmake --version
+        
+        apt-get -y install unzip libtool-bin curl gperf gawk flex bison nano xxd fakeroot \
+        cpio git python-docutils gettext automake autopoint texinfo build-essential help2man \
+        pkg-config zlib1g-dev libgmp3-dev libmpc-dev libmpfr-dev libncurses5-dev libltdl-dev wget sudo
+        
+
         
     - name: Clone source code
       env:
